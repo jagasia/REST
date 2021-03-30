@@ -1,0 +1,387 @@
+
+Web Services
+	SOAP	
+
+1999 XML
+2001 SOAP		Simple Object Access Protocol
+		SOAP messages are XML data
+
+	<soap:envelope>
+		<soap:header>	</soap:header>
+		<soap:body>	</soap:body>
+	</soap:envelope>
+SOAP Webservices:
+when a client calls a web service method (web method), the parameters
+		are supplied as soap message (xml)
+		the return value (response) will be sent to client
+		as soap message
+
+Rules for Restful URI:
+https://blog.restcase.com/7-rules-for-rest-api-uri-design/
+
+ReST		REpresentational State Transfer
+
+		i) SOAP
+		ii) JSON
+		
+		various types of data transferred
+
+
+
+if you see soap web services, the client gets proxy for all the methods in the impl code.
+		using the proxy i am able to call any method.
+
+but if you remember the RestController we created, we had URL for every method:
+		i AM able to call one method using one url.
+
+		yes RestController is one way of impl micro services.
+
+1) How to create a RestFul Web service now? using eclipse?
+
+steps:
+
+1) create a dynamic web project.
+	because, we need to provide access to our code using URL. ex: http://localhost:8080/projName/methodName
+
+	i) to add web.xml file to the project, 
+		right click project
+			-> Java EE tools	->	Generate Deployment Descriptor Stub
+
+2) convert the dynamic web project into maven project.
+	i) right click project
+		-> configure		-> convert to maven project
+
+3) we need to add dependencies to the POM.xml
+		            <dependency>
+            <groupId>org.glassfish.jersey.containers</groupId>
+            <artifactId>jersey-container-servlet</artifactId>
+            <version>2.29.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.glassfish.jersey.inject</groupId>
+            <artifactId>jersey-hk2</artifactId>
+            <version>2.29.1</version>
+        </dependency>
+    
+        <dependency>
+            <groupId>org.glassfish.jersey.media</groupId>
+            <artifactId>jersey-media-json-jackson</artifactId>
+            <version>2.29.1</version>
+        </dependency>
+
+	<dependency>
+	    <groupId>asm</groupId>
+	    <artifactId>asm</artifactId>
+	    <version>3.1</version>
+	</dependency>
+	if there is no <dependencies> tag, create on above <build> tag 
+	and add these dependencies inside the dependencies tag
+
+4) update maven project
+5) go to web.xml file	(present inside webcontent/web-inf/)
+	add the dispatcher servlet (add below code below </welcome-file-list>
+	    <servlet>
+        <servlet-name>Jersey REST Service</servlet-name>
+        <servlet-class>org.glassfish.jersey.servlet.ServletContainer</servlet-class>
+        <init-param>
+            <param-name>jersey.config.server.provider.packages</param-name>
+            <param-value>com.cts.jag</param-value>
+        </init-param>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>Jersey REST Service</servlet-name>
+        <url-pattern>/rest/*</url-pattern>
+    </servlet-mapping>
+
+
+	any request comes like http://localhost:8080/rest/
+
+6) create a service class in com.cts.jag package. Example is given below
+
+package com.cts.jag;
+
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Response;
+
+@Path("/")
+public class HelloWorld {
+	@GET
+	@Produces("text/xml")
+	public Response getMessage()
+	{
+		return Response.status(200).entity("<b>Hello Jag</b>").build();
+	}
+	
+}
+
+7) update project
+
+8) clean and install project
+	right click project	-> Run As	-> Maven Build (2)	
+	type clean install
+	run
+
+9) start apache tomcat server if it is not running
+
+10) deploy our web app using
+	right click tomcat server
+	add or remove
+	choose the app
+
+11) run the app 
+	right click project
+	run as -> run on server
+
+12) in the url, enter http://localhost:8080/my-first-rest-project/rest
+	(initially without /rest it will show error)
+
+[ERROR] COMPILATION ERROR : 
+[INFO] -------------------------------------------------------------
+[ERROR] No compiler is provided in this environment. Perhaps you are running on a JRE rather than a JDK?
+Problem while 
+	clean install
+
+solution:
+
+in eclipse
+window menu, perferences
+	-> Java
+		Installed JREs
+		if JRE is found, we change it to JDK
+		click Add
+			JRE type Standard JVM, Next
+			click Directory button
+			choose c:\program files\java\jdk folder
+
+
+....................
+Create a client (java) project";
+ex:
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+
+public class NetClientGet {
+    public static void main(String[] args) {
+        try {
+
+            URL url = new URL("http://localhost:8080/my-first-rest-project/rest/home");//your url i.e fetch data from .
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            conn.setRequestProperty("Accept", "text/xml");
+            if (conn.getResponseCode() != 200) {
+                throw new RuntimeException("Failed : HTTP Error code : "
+                        + conn.getResponseCode());
+            }
+            InputStreamReader in = new InputStreamReader(conn.getInputStream());
+            BufferedReader br = new BufferedReader(in);
+            String output;
+            while ((output = br.readLine()) != null) {
+                System.out.println(output);
+            }
+            conn.disconnect();
+
+        } catch (Exception e) {
+            System.out.println("Exception in NetClientGet:- " + e);
+        }
+    }
+}
+
+
+
+
+
+package com.cts.jag;
+
+import java.sql.SQLException;
+
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
+
+import model.Branch;
+import model.BranchDAOImpl;
+
+@Path("/bank")
+public class MyController {
+
+	BranchDAOImpl bdao=new BranchDAOImpl();
+	
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	public Branch[] getAllBranchs()
+	{
+		Branch[] branches=null;
+		try {
+			branches = bdao.read();
+		} catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return branches;
+	}
+	
+//	 @GET
+//	    @Path("/{id}")
+//	    @Produces(MediaType.APPLICATION_JSON)
+//	 public Country getCountryById(@PathParam("id") int id)
+//	 {
+//	  return countryService.getCountry(id);
+//	 }
+
+	@GET
+	@Path("/{id}")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Branch findBranchById(@PathParam("id") String id)
+	{
+		Branch branch=null;
+		
+		try {
+			branch= bdao.read(id);
+		} catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		return branch;
+	}
+	
+//	@POST
+//    @Produces(MediaType.APPLICATION_JSON)
+// public Country addCountry(Country country)
+// {
+//  return countryService.addCountry(country);
+// }
+
+	@POST
+	@Path("/add")
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	public Branch addBranch(Branch branch)
+	{
+		int no=0;
+		try {
+			no=bdao.create(branch);
+		} catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return branch;
+	}
+
+
+	@POST
+	@Path("/update")
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	public Branch updateBranch(Branch branch)
+	{
+		int no=0;
+		try {
+			no=bdao.update(branch);
+		} catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return branch;
+	}
+
+	@POST
+	@Path("/delete")
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	public Branch deleteBranch(Branch branch)
+	{
+		int no=0;
+		try {
+			no=bdao.delete(branch.getBid());
+		} catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return branch;
+	}
+	
+	@PUT
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	public Branch updateBranch1(Branch branch)
+	{
+		int no=0;
+		try {
+			no=bdao.update(branch);
+		} catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return branch;
+	}
+	
+	@DELETE
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	public Branch deleteBranch1(Branch branch)
+	{
+		int no=0;
+		try {
+			no=bdao.delete(branch.getBid());
+		} catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return branch;
+	}
+
+	@POST
+	@Path("/update1")
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.TEXT_PLAIN)
+	public int updateBranch2(Branch branch)
+	{
+		int no=0;
+		try {
+			no=bdao.update(branch);
+		} catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return no;
+	}
+
+}

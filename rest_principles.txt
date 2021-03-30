@@ -1,0 +1,17 @@
+Principles of Rest Services:
+	Uniform Interface:
+		In REST, everything is a resource. Resource may be a document, picture, video, module, class, method, etc. Anything that is available to service consumer. 
+		Resources are accessed using URI.
+		Each resource must have unique URI.
+		SAME URI but DIFFERENT HTTP methods
+
+	Statelessness:
+		no client state information is maintained at server
+		hence, scalable and reduced work load
+		
+	Layered System:
+		example, API in one server, Database in another server, authentication in another server	
+
+	Code on Demand:
+		different format based on demand. XML or JSON
+	
